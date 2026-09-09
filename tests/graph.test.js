@@ -1,10 +1,147 @@
-import test from 'node:test';import assert from 'node:assert/strict';import {evaluateGraph,validateGraph,repeatAxis} from '../src/graph.js';import {getPreset,presets} from '../src/presets.js';
-test('all preset meshes have finite vertices and meaningful distinct geometry',()=>{const counts=[];for(const name of Object.keys(presets)){const graph=getPreset(name),g=evaluateGraph(graph,graph.at(-1).id);assert.ok(g.attributes.position.count>300);assert.ok([...g.attributes.position.array].every(Number.isFinite));counts.push(g.attributes.position.count);g.dispose();}assert.equal(new Set(counts).size,3);});
-test('repeat increases real triangle count linearly',()=>{const graph=[{id:'a',type:'box',params:{}},{id:'b',type:'repeat',inputs:['a'],params:{count:5,offset:[2,0,0]}}];const a=evaluateGraph(graph,'a'),b=evaluateGraph(graph,'b');assert.equal(b.attributes.position.count,a.attributes.position.count*5);a.dispose();b.dispose();});
-test('cycles and missing inputs rejected rather than overflowing the stack',()=>{assert.throws(()=>validateGraph([{id:'a',inputs:['b']},{id:'b',inputs:['a']}],'a'),/cycle/);assert.throws(()=>validateGraph([{id:'a',inputs:['missing']}],'a'),/Missing/);});
-test('twist moves positions but preserves radial distance',()=>{const graph=[{id:'a',type:'box',params:{}},{id:'b',type:'twist',inputs:['a'],params:{amount:1}}];const a=evaluateGraph(graph,'a'),b=evaluateGraph(graph,'b');let moved=0;for(let i=0;i<a.attributes.position.count;i++){const aa=a.attributes.position,bb=b.attributes.position;assert.ok(Math.abs(Math.hypot(aa.getX(i),aa.getZ(i))-Math.hypot(bb.getX(i),bb.getZ(i)))<1e-5);if(Math.abs(aa.getX(i)-bb.getX(i))>1e-4)moved++;}assert.ok(moved>0);a.dispose();b.dispose();});
-test('bend keeps cross section offsets on the same curved coordinate frame',()=>{const graph=[{id:'a',type:'box',params:{width:1,height:2,depth:1}},{id:'b',type:'bend',inputs:['a'],params:{amount:1}}];const a=evaluateGraph(graph,'a'),b=evaluateGraph(graph,'b');for(let i=0;i<a.attributes.position.count;i++){const p=a.attributes.position,q=b.attributes.position,angle=(p.getY(i)+1)/2,radius=2+p.getX(i);assert.ok(Math.abs(q.getX(i)-(radius*Math.cos(angle)-2))<1e-5);assert.ok(Math.abs(q.getY(i)-(radius*Math.sin(angle)-1))<1e-5);}a.dispose();b.dispose();});
-test('untrusted graph inputs are bounded before expansion',()=>{assert.throws(()=>evaluateGraph([{id:'a',type:'curve',params:{points:Array(129).fill([0,0,0])}}],'a'),/128/);});
+import test from "node:test";
+import assert from "node:assert/strict";
+import { evaluateGraph, validateGraph, repeatAxis } from "../src/graph.js";
+import { getPreset, presets } from "../src/presets.js";
+test("all preset meshes have finite vertices and meaningful distinct geometry", () => {
+  const counts = [];
+  for (const name of Object.keys(presets)) {
+    const graph = getPreset(name),
+      g = evaluateGraph(graph, graph.at(-1).id);
+    assert.ok(g.attributes.position.count > 300);
+    assert.ok([...g.attributes.position.array].every(Number.isFinite));
+    counts.push(g.attributes.position.count);
+    g.dispose();
+  }
+  assert.equal(new Set(counts).size, 3);
+});
+test("repeat increases real triangle count linearly", () => {
+  const graph = [
+    { id: "a", type: "box", params: {} },
+    {
+      id: "b",
+      type: "repeat",
+      inputs: ["a"],
+      params: { count: 5, offset: [2, 0, 0] },
+    },
+  ];
+  const a = evaluateGraph(graph, "a"),
+    b = evaluateGraph(graph, "b");
+  assert.equal(b.attributes.position.count, a.attributes.position.count * 5);
+  a.dispose();
+  b.dispose();
+});
+test("cycles and missing inputs rejected rather than overflowing the stack", () => {
+  assert.throws(
+    () =>
+      validateGraph(
+        [
+          { id: "a", inputs: ["b"] },
+          { id: "b", inputs: ["a"] },
+        ],
+        "a",
+      ),
+    /cycle/,
+  );
+  assert.throws(
+    () => validateGraph([{ id: "a", inputs: ["missing"] }], "a"),
+    /Missing/,
+  );
+});
+test("twist moves positions but preserves radial distance", () => {
+  const graph = [
+    { id: "a", type: "box", params: {} },
+    { id: "b", type: "twist", inputs: ["a"], params: { amount: 1 } },
+  ];
+  const a = evaluateGraph(graph, "a"),
+    b = evaluateGraph(graph, "b");
+  let moved = 0;
+  for (let i = 0; i < a.attributes.position.count; i++) {
+    const aa = a.attributes.position,
+      bb = b.attributes.position;
+    assert.ok(
+      Math.abs(
+        Math.hypot(aa.getX(i), aa.getZ(i)) - Math.hypot(bb.getX(i), bb.getZ(i)),
+      ) < 1e-5,
+    );
+    if (Math.abs(aa.getX(i) - bb.getX(i)) > 1e-4) moved++;
+  }
+  assert.ok(moved > 0);
+  a.dispose();
+  b.dispose();
+});
+test("bend keeps cross section offsets on the same curved coordinate frame", () => {
+  const graph = [
+    { id: "a", type: "box", params: { width: 1, height: 2, depth: 1 } },
+    { id: "b", type: "bend", inputs: ["a"], params: { amount: 1 } },
+  ];
+  const a = evaluateGraph(graph, "a"),
+    b = evaluateGraph(graph, "b");
+  for (let i = 0; i < a.attributes.position.count; i++) {
+    const p = a.attributes.position,
+      q = b.attributes.position,
+      angle = (p.getY(i) + 1) / 2,
+      radius = 2 + p.getX(i);
+    assert.ok(Math.abs(q.getX(i) - (radius * Math.cos(angle) - 2)) < 1e-5);
+    assert.ok(Math.abs(q.getY(i) - (radius * Math.sin(angle) - 1)) < 1e-5);
+  }
+  a.dispose();
+  b.dispose();
+});
+test("untrusted graph inputs are bounded before expansion", () => {
+  assert.throws(
+    () =>
+      evaluateGraph(
+        [
+          {
+            id: "a",
+            type: "curve",
+            params: { points: Array(129).fill([0, 0, 0]) },
+          },
+        ],
+        "a",
+      ),
+    /128/,
+  );
+});
 
-test('invalid translation and repeat vectors are rejected before building meshes',()=>{for(const type of ['translate','repeat'])for(const offset of [[1],[1e308,0,0],[null,0,0],[0,Infinity,0]])assert.throws(()=>evaluateGraph([{id:'a',type:'box',params:{}},{id:'b',type,inputs:['a'],params:{offset}}],'b'),/Offsets/);});
-test('repeat spacing follows the dominant signed axis, including new X repeats',()=>{assert.equal(repeatAxis([1.8,0,0]),0);assert.equal(repeatAxis([0,-.4,0]),1);assert.equal(repeatAxis([0,0,.35]),2);});
+test("invalid translation and repeat vectors are rejected before building meshes", () => {
+  for (const type of ["translate", "repeat"])
+    for (const offset of [[1], [1e308, 0, 0], [null, 0, 0], [0, Infinity, 0]])
+      assert.throws(
+        () =>
+          evaluateGraph(
+            [
+              { id: "a", type: "box", params: {} },
+              { id: "b", type, inputs: ["a"], params: { offset } },
+            ],
+            "b",
+          ),
+        /Offsets/,
+      );
+});
+test("repeat spacing follows the dominant signed axis, including new X repeats", () => {
+  assert.equal(repeatAxis([1.8, 0, 0]), 0);
+  assert.equal(repeatAxis([0, -0.4, 0]), 1);
+  assert.equal(repeatAxis([0, 0, 0.35]), 2);
+});
+
+test("pavilion repeats stay centered and aligned, and additional ribs add real faces", () => {
+  const graph = getPreset("Ribbed pavilion");
+  assert.equal(graph.at(-1).type, "repeat");
+  const initial = evaluateGraph(graph, graph.at(-1).id);
+  initial.computeBoundingBox();
+  assert.ok(
+    Math.abs(initial.boundingBox.max.z + initial.boundingBox.min.z) < 1e-5,
+  );
+  const originalCount = initial.attributes.position.count;
+  graph.at(-1).params.count = 21;
+  const expanded = evaluateGraph(graph, graph.at(-1).id);
+  expanded.computeBoundingBox();
+  assert.ok(expanded.attributes.position.count > originalCount);
+  assert.ok(
+    Math.abs(expanded.boundingBox.max.z + expanded.boundingBox.min.z) < 1e-5,
+  );
+  assert.ok(expanded.boundingBox.max.z > initial.boundingBox.max.z);
+  initial.dispose();
+  expanded.dispose();
+});
