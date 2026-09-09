@@ -39,7 +39,7 @@ Evaluation is bounded to 40 nodes, 128 profile points, 600,000 output vertices, 
 
 ## Verification
 
-`npm test` verifies finite preset geometry, repetition counts, twist radius preservation, the bend coordinate mapping, cycle rejection, and input bounds. Browser checks exercised graph changes, actual OBJ export (39,936 vertices / 13,312 triangles for the pavilion example), and a 390px viewport without horizontal overflow. Example steps are recorded in `examples/manifest.json`.
+`npm test` verifies finite preset geometry, repetition counts, twist radius preservation, the bend coordinate mapping, cycle rejection, and input bounds. Browser checks exercised graph changes, actual OBJ export, rib count and spacing changes, independent arch dimensions, and a 390px viewport without horizontal overflow. Example steps are recorded in `examples/manifest.json`.
 
 No GitHub Actions are configured. Run tests locally before publishing.
 
@@ -63,8 +63,14 @@ npm run dev
 
 Turned lamp · a 64-segment lathe profile.
 
-![Thirteen repeated curved ribs forming an open pavilion widened by a taper modifier](examples/02.png)
+![Thirteen evenly spaced arches connected along their feet and roof ridge](examples/02.png)
 
-Ribbed pavilion · thirteen curves with a 0.65 taper.
+Ribbed pavilion · thirteen centered arches with connecting rails.
 
 Exact reproduction steps are recorded in [the example manifest](examples/manifest.json).
+
+## Getting started
+
+The default spiral staircase exposes Copies, Step rise, and Turn per copy in degrees. Select a numbered Build step to edit the original step dimensions or its position. Start with also offers a lamp (editable height and width) and a pavilion. Add to shape appends the selected operation automatically; Remove latest step and Undo reverse changes. Input rewiring stays inside the Advanced disclosure, and graph JSON remains available for saving editable work. New operations are evaluated before being committed, so a rejected operation leaves the previous shape intact.
+
+The pavilion opens on **Number of ribs** and **Rib spacing**: each copy is one arch. **Draw an arch** exposes width, height, and thickness. Repeats remain centered, and three connecting members join the arch feet and roof ridge. The old taper that skewed the ribs has been removed. The taper operation uses **Top width (%)**; adding **Narrow toward the top** starts at 70%.
